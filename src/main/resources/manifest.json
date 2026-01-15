@@ -1,0 +1,19 @@
+{
+  "Group": "ExampleGroup",
+  "Name": "ExamplePlugin",
+  "Description": "A Hytale plugin template",
+  "Version": "1.0.0",
+  "Authors": [
+    {
+      "Name": "YourName",
+      "Email": "your.email@example.com",
+      "Url": "https://your-website.com"
+    }
+  ],
+  "Website": "https://github.com/yourusername/hytale-kotlin-template",
+  "Main": "com.example.plugin.Plugin",
+  "ServerVersion": "*",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "DisabledByDefault": false
+}

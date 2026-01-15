@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        cache: 'gradle'
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Check for HytaleServer.jar
+      run: |
+        if [ ! -f "libs/HytaleServer.jar" ]; then
+          echo "HytaleServer.jar not found. Creating dummy jar for release build."
+          mkdir -p libs
+          echo "Manifest-Version: 1.0" > MANIFEST.MF
+          jar cfm libs/HytaleServer.jar MANIFEST.MF
+          rm MANIFEST.MF
+        fi
+      
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon
+      
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/libs/*.jar
+        body: |
+          ## Hytale Plugin Release ${{ steps.get_version.outputs.VERSION }}
+          
+          ### Installation
+          1. Download the attached JAR file
+          2. Place it in the `plugins/` folder of your Hytale server
+          3. Restart your server
+          
+          ### Changelog
+          <!-- Add your changes here -->
+          
+          ### Links
+          - [Source Code](https://github.com/${{ github.repository }})
+          - [Documentation](https://github.com/${{ github.repository }}#readme)
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

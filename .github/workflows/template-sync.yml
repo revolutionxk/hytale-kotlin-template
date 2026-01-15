@@ -1,0 +1,80 @@
+name: Template Sync
+
+# This workflow syncs template updates to repositories using this template
+# Disable this workflow if you do not want to receive automatic template updates
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  sync-template:
+    runs-on: ubuntu-latest
+    if: github.repository != 'revolutionxk/hytale-kotlin-template'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Check for template updates
+      id: check
+      run: |
+        # Add template as remote
+        git remote add template https://github.com/revolutionxk/hytale-kotlin-template.git || true
+        git fetch template
+        
+        # Check for updates
+        BEHIND=$(git rev-list --count HEAD..template/main)
+        echo "behind=$BEHIND" >> $GITHUB_OUTPUT
+        
+        if [ "$BEHIND" -gt 0 ]; then
+          echo "Template is $BEHIND commits ahead"
+          echo "has_updates=true" >> $GITHUB_OUTPUT
+        else
+          echo "Template is up to date"
+          echo "has_updates=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create update PR
+      if: steps.check.outputs.has_updates == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: sync with template updates'
+        title: 'Template Updates Available'
+        body: |
+          ## Template Updates
+          
+          There are updates available from the original template.
+          
+          ### Before Merging
+          
+          1. Review the changes carefully
+          2. Test locally to ensure compatibility
+          3. Resolve any conflicts
+          4. Update your documentation if needed
+          
+          ### What May Have Changed
+          
+          - GitHub Actions workflows
+          - Gradle configuration
+          - Dependencies
+          - Documentation
+          - Code examples
+          
+          ### If you do not want automatic updates
+          
+          Disable the `template-sync.yml` workflow or delete this file.
+          
+          ---
+          
+          *This PR was created automatically by the template sync workflow.*
+        branch: template-updates
+        delete-branch: true
+        labels: |
+          template-sync
+          dependencies
